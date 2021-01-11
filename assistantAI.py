@@ -1,3 +1,4 @@
+# Imports
 import pyttsx3
 import speech_recognition as sr
 import time
@@ -10,33 +11,42 @@ from selenium import webdriver
 from tkinter import *
 from PIL import Image, ImageTk
 
+# Initializing chrome browser
 chrome_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
 webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(chrome_path))
 webBro = webbrowser.get('chrome')
 
+# Create speech engine
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-voiceList = [1, 0]
+voiceList = [0, 1]
 assistant = random.choice(voiceList)
 engine.setProperty('voice', voices[assistant].id)
 
-meRefList = ['arya', 'prakkyath', 'boss', 'big boss', 'master', 'handsome', 'sir']
+# Initialize the recognizer
+r = sr.Recognizer()
+
+# List of speech's
+meRefList = ['arya', 'prakkyath', 'boss', 'big boss', 'master', 'sir']
 aiInitList = ['How may I help you', 'what do you want me to do', 'whats up', 'shoot your command']
 aiInit = random.choice(aiInitList)
 
-
+# Function to make assistant speak
 def speak(audio):
     engine.say(audio)
     engine.runAndWait()
 
 
+# Function to play music video
 def play_music_vid(song):
+    # Using selenium
     options = webdriver.ChromeOptions()
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     rootyt = webdriver.Chrome('chromedriver.exe', chrome_options=options)
     song = song.split(' ')
     rootyt.get(f"https://www.youtube.com/results?search_query={'+'.join(song)}")
     time.sleep(3)
+    # Click on 1st video
     first_vid = rootyt.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-search/div[1]/ytd-two-column-search-results-renderer/div/ytd-section-list-renderer/div[2]/ytd-item-section-renderer/div[3]/ytd-video-renderer[1]/div[1]')
     first_vid.click()
     rootyt.maximize_window()
@@ -44,46 +54,53 @@ def play_music_vid(song):
     return None
 
 
+# Function to play music
 def play_music(song):
+    # Using selenium,
     options = webdriver.ChromeOptions()
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     rootgn = webdriver.Chrome('chromedriver.exe')
     rootgn.get(f"https://gaana.com/search/{song}")
     time.sleep(3)
     rootgn.minimize_window()
+    # Click on 1st song
     first_song = rootgn.find_element_by_xpath('//*[@id="new-release-album"]/li[1]')
     first_song.click()
     return None
 
 
-def wish_me():
-    wishing_choice_list = ['a', 'b', 'c']
-    wishing_choice = random.choice(wishing_choice_list)
+# Function to make assistant wish the user
+def wish_me(a=1):
+    if a == 1:
+        wishing_choice_list = ['a', 'b', 'c']
+        wishing_choice = random.choice(wishing_choice_list)
 
-    if wishing_choice == 'a':
-        hour = int(datetime.datetime.now().hour)
-        if 0 <= hour < 12:
-            speak("Good Morning {0}".format(random.choice(meRefList)))
-        elif 12 <= hour < 15:
-            speak("Good Afternoon {0}".format(random.choice(meRefList)))
+        if wishing_choice == 'a':
+            hour = int(datetime.datetime.now().hour)
+            if 0 <= hour < 12:
+                speak("Good Morning {0}".format(random.choice(meRefList)))
+            elif 12 <= hour < 15:
+                speak("Good Afternoon {0}".format(random.choice(meRefList)))
+            else:
+                speak("Good Evening {0}".format(random.choice(meRefList)))
+
+        elif wishing_choice == 'b':
+            speak("Hey {0}".format(random.choice(meRefList)))
+
         else:
-            speak("Good Evening {0}".format(random.choice(meRefList)))
-
-    elif wishing_choice == 'b':
-        speak("Hey {0}".format(random.choice(meRefList)))
+            speak("Hello {0}".format(random.choice(meRefList)))
 
     else:
-        speak("Hello {0}".format(random.choice(meRefList)))
+        speak("{0} {1}".format(aiInit, random.choice(meRefList)))
 
-    speak("{0}".format(aiInit))
     return None
 
 
+# Function to take microphone input from the user and returns string output
 def take_command():
-    # It takes microphone input from the user and returns string output
-    r = sr.Recognizer()
+    # Intialize the microphone
     with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source)
+        # r.adjust_for_ambient_noise(source)
         strings.insert(END, "Listening.......\n")
         root.update_idletasks()
         r.pause_threshold = 1.00
@@ -105,9 +122,10 @@ def take_command():
     return query
 
 
+# End and exit the application
 def exit_assistant():
     strings.delete(1.0, END)
-    exit_list = ['bye bye', 'good bye', 'have a good day', 'my pleasure', 'see you later', 'bye, I love you']
+    exit_list = ['bye bye', 'good bye', 'have a good day', 'my pleasure', 'see you later', 'bye']
     speak('{0} {1}'.format(random.choice(exit_list), random.choice(meRefList)))
     strings.insert(END, '\n\nCAll ME AGAIN WHENEVER NEEDED!!!\n\n')
     root.update_idletasks()
@@ -118,7 +136,9 @@ def exit_assistant():
     root.after(3000, root.quit())
 
 
+# Main function to control assistant
 def assistant_function():
+    # Take commands
     query = take_command().lower()
     if query[0:4] == "exit" or query[0:4] == "mute":
         return
@@ -163,9 +183,9 @@ def assistant_function():
 
     elif 'search' in query:
         query_list = query.split(' ')
-        # strings.insert(END, query_list)
         root.update_idletasks()
         webBro.open(f"https://www.google.com/search?q={'+'.join(query_list)}")
+        speak("here's the result for your search query")
         minimize()
 
     elif 'open stack overflow' in query:
@@ -179,9 +199,10 @@ def assistant_function():
         speak('my job of booking gas here is done, boss. hope you paid the money and confirmed the booking sir')
         minimize()
 
-    elif 'covid app' in query:
+    elif ('covid app' in query)  or ('corona app' in query):
         speak('opening covid app')
-        os.system("C:\\Users\\aryap\\Documents\\Python Scripts\\py_covidAid\\covidAid.exe")
+        os.system("cd 'C:\\Users\\aryap\\Documents\\Python Scripts\\py_covidAid'")
+        os.system("covidAid.exe")
         speak('covid app was successfully opened')
         minimize()
 
@@ -204,12 +225,12 @@ def assistant_function():
 
     elif ('wikipedia' in query) or ('what' in query) or ('who' in query) or ('whom' in query) or (
             'whose' in query) or ('where' in query) or (
-            'when' in query) or ('why' in query) or ('which' in query) or ('how' in query):
+            'when' in query) or ('why' in query) or ('which' in query) or ('how' in query) or ('tell me about' in query):
         speak('just a minute {0}'.format(random.choice(meRefList)))
         query = query.replace("wikipedia", "")
         results = wikipedia.summary(query, sentences=2)
         speak(random.choice(["as far as i know", "what i know is that", "what i found is"]))
-        strings.insert(END, results+"/n")
+        strings.insert(END, results + "\n")
         root.update_idletasks()
         speak(results)
         speak('do you want more')
@@ -238,7 +259,7 @@ def call():
     exit['state'] = 'disabled'
     command['state'] = 'disabled'
     root.update_idletasks()
-    wish_me()
+    wish_me(0)
     assistant_function()
     exit['state'] = 'normal'
     command['state'] = 'normal'
@@ -294,5 +315,5 @@ if __name__ == "__main__":
 
     strings.insert(END, '\n\t   AI is Active Now\n\n')
     root.update_idletasks()
-    root.after(500, speak("Welcome. I am Jarvis" if assistant == 0 else "Welcome. My name is Friday"))
+    root.after(500, wish_me(), speak("I'm Jarvis" if assistant == 0 else "I'm Friday"))
     root.mainloop()
