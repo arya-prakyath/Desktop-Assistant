@@ -10,6 +10,7 @@ import webbrowser
 from selenium import webdriver
 from tkinter import *
 from PIL import Image, ImageTk
+import pyautogui
 
 # Initializing chrome browser
 chrome_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
@@ -19,7 +20,7 @@ webBro = webbrowser.get('chrome')
 # Create speech engine
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-voiceList = [0, 1]
+voiceList = [0, 1, 2]
 assistant = random.choice(voiceList)
 engine.setProperty('voice', voices[assistant].id)
 
@@ -42,7 +43,7 @@ def play_music_vid(song):
     # Using selenium
     options = webdriver.ChromeOptions()
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    rootyt = webdriver.Chrome('chromedriver.exe', chrome_options=options)
+    rootyt = webdriver.Chrome('chromedriver.exe', options=options)
     song = song.split(' ')
     rootyt.get(f"https://www.youtube.com/results?search_query={'+'.join(song)}")
     time.sleep(3)
@@ -50,7 +51,8 @@ def play_music_vid(song):
     first_vid = rootyt.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-search/div[1]/ytd-two-column-search-results-renderer/div/ytd-section-list-renderer/div[2]/ytd-item-section-renderer/div[3]/ytd-video-renderer[1]/div[1]')
     first_vid.click()
     rootyt.maximize_window()
-    time.sleep(6.5)
+    time.sleep(0.5)
+    pyautogui.press('f')
     return None
 
 
@@ -97,27 +99,34 @@ def wish_me(a=1):
 
 
 # Function to take microphone input from the user and returns string output
+error_count = 0
 def take_command():
+    global error_count
     # Intialize the microphone
     with sr.Microphone() as source:
-        # r.adjust_for_ambient_noise(source)
         strings.insert(END, "Listening.......\n")
         root.update_idletasks()
-        r.pause_threshold = 1.00
-        audio = r.listen(source)
 
-    try:
-        strings.insert(END, "Recognizing.....\n")
-        root.update_idletasks()
-        query = r.recognize_google(audio, language='en')
-        strings.insert(END, f"THE_ARYA: {query}\n\n")
-        root.update_idletasks()
+        try:
+            # r.adjust_for_ambient_noise(source)
+            # r.pause_threshold = 1.00
+            audio = r.listen(source)
+            strings.insert(END, "Recognizing.....\n")
+            root.update_idletasks()
+            query = r.recognize_google(audio)
+            strings.insert(END, f"THE_ARYA: {query}\n\n")
+            root.update_idletasks()
 
-    except Exception:
-        speak("I'm sorry. say that again please")
-        strings.insert(END, "Say that again please......\n")
-        root.update_idletasks()
-        return take_command()
+        except Exception:
+            error_count += 1
+            if error_count < 3:
+                speak("I'm sorry. say that again please")
+                strings.insert(END, "Say that again please......\n")
+                root.update_idletasks()
+                return take_command()
+            else:
+                error_count = 0
+                return 'error'
 
     return query
 
@@ -154,7 +163,7 @@ def assistant_function():
         time.sleep(0.5)
         speak(f'Its a {random.choice([1, 2, 3, 4, 5, 6])}')
 
-    elif 'toss a coin' in query:
+    elif 'coin' in query:
         speak('on it sir. The coin has been tossed high')
         time.sleep(0.5)
         speak('and what you got is.')
@@ -215,12 +224,25 @@ def assistant_function():
             return
         if ('yes' in isvid) or ('s' in isvid) or ('yeah' in isvid):
             speak("Playing the song for you via youtube")
-            play_music_vid(song)
+            try:
+                play_music_vid(song)
+                strings.insert(END, 'Enjoy the song.....\n')
+                root.update_idletasks()
+            except:
+                speak("There is some problem. Try updating chrome driver.")
+                strings.insert(END, 'There is some problem. Try updating chrome driver.\n')
+                root.update_idletasks()
         else:
             speak("Playing the song for you")
-            play_music(song)
-        strings.insert(END, 'Enjoy the song.....\n')
-        root.update_idletasks()
+            try:
+                play_music(song)
+                strings.insert(END, 'Enjoy the song.....\n')
+                root.update_idletasks()
+            except:
+                speak("There is some problem. Try updating chrome driver.")
+                strings.insert(END, 'There is some problem. Try updating chrome driver.\n')
+                root.update_idletasks()
+        time.sleep(0.5)
         minimize()
 
     elif ('wikipedia' in query) or ('what' in query) or ('who' in query) or ('whom' in query) or (
@@ -249,10 +271,9 @@ def assistant_function():
         exit_assistant()
 
     else:
-        strings.insert(END, 'Sorry Did not Catch that.\n')
+        strings.insert(END, 'Sorry Did not Catch that. Try again.\n')
         root.update_idletasks()
-        speak('Sorry I Did not Catch that. Please say that again')
-        assistant_function()
+        speak('Sorry I Did not Catch that')
 
 
 def call():
@@ -260,7 +281,9 @@ def call():
     command['state'] = 'disabled'
     root.update_idletasks()
     wish_me(0)
+    strings.delete(1.0, END)
     assistant_function()
+    # strings.insert(END, '\n *** AI is Active. Press command. ***\n\n')
     exit['state'] = 'normal'
     command['state'] = 'normal'
 
@@ -289,7 +312,7 @@ if __name__ == "__main__":
     root.bind("<Alt_L>", lambda e: minimize())
     root.wm_attributes("-topmost", 1)
 
-    titleBar = Label(root, text="\tTHE_ARYA | JARVIS", anchor=W, relief=SOLID,  height=2, bg="#00004d", fg="WHITE")
+    titleBar = Label(root, text="\tTHE_ARYA | AI", anchor=W, relief=SOLID,  height=2, bg="#00004d", fg="WHITE")
     titleBar.pack(side=TOP, fill=X, expand=True, pady=(0, 0))
     titleBar.bind("<Map>", maximize)
     minimizeButton = Button(titleBar, text='---', font=("", 15), bg="#00004d", fg="WHITE", anchor=CENTER, relief=SOLID, cursor="hand2", command=minimize)
@@ -313,7 +336,15 @@ if __name__ == "__main__":
                   cursor="hand2", command=exit_assistant)
     exit.pack(padx=(650, 0), pady=(10, 10))
 
-    strings.insert(END, '\n\t   AI is Active Now\n\n')
+    strings.insert(END, '\n *** AI is Active. Press command. ***\n\n')
     root.update_idletasks()
-    root.after(500, wish_me(), speak("I'm Jarvis" if assistant == 0 else "I'm Friday"))
+    if assistant == 0:
+        root.after(500, wish_me(), speak("I'm Jarvis"))
+        titleBar['text'] = "\tTHE_ARYA | JARVIS"
+    elif assistant == 1:
+        root.after(500, wish_me(), speak("I'm Friday"))
+        titleBar['text'] = "\tTHE_ARYA | FRIDAY"
+    else:
+        root.after(500, wish_me(), speak("I'm Edith"))
+        titleBar['text'] = "\tTHE_ARYA | EDITH"
     root.mainloop()
